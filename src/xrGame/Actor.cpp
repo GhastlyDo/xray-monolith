@@ -177,104 +177,115 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 	// Camera bobbing (movement effect) is not active or not set
 	pCamBobbing = 0; // "Camera bobbing" refers to the visual effect of the camera moving up and down or swaying slightly, often used to simulate walking or running.
 
+	// Set the freelook camera mode to disabled
 	cam_freelook = eflDisabled;
+
+	// Initialize the freelook camera control to zero (indicating no control or movement)
 	freelook_cam_control = 0.f;
 
-	r_torso.yaw = 0;
-	r_torso.pitch = 0;
-	r_torso.roll = 0;
-	r_torso_tgt_roll = 0;
-	r_model_yaw = 0;
-	r_model_yaw_delta = 0;
-	r_model_yaw_dest = 0;
+	// Initialize torso rotation parameters
+	r_torso.yaw = 0;            // Yaw (horizontal rotation) of the torso
+	r_torso.pitch = 0;          // Pitch (vertical rotation) of the torso
+	r_torso.roll = 0;           // Roll (tilting) of the torso
+	r_torso_tgt_roll = 0;       // Target roll angle for the torso
+	r_model_yaw = 0;            // Yaw angle of the character model
+	r_model_yaw_delta = 0;      // Delta change in the yaw angle of the character model
+	r_model_yaw_dest = 0;       // Destination yaw angle for the character model
 
-	b_DropActivated = 0;
-	f_DropPower = 0.f;
+	// Drop activation status and power
+	b_DropActivated = 0;        // Flag indicating if a drop action is activated (0 = not activated)
+	f_DropPower = 0.f;          // Power of the drop action (0 = no power)
 
-	m_fRunFactor = 2.f;
-	m_fCrouchFactor = 0.2f;
-	m_fClimbFactor = 1.f;
-	m_fCamHeightFactor = 0.87f;
+	// Movement factors
+	m_fRunFactor = 2.f;         // Factor by which running speed is multiplied
+	m_fCrouchFactor = 0.2f;     // Factor by which crouching speed is multiplied
+	m_fClimbFactor = 1.f;       // Factor by which climbing speed is multiplied
+	m_fCamHeightFactor = 0.87f; // Factor affecting the height of the camera
 
-	m_fFallTime = s_fFallTime;
-	m_bAnimTorsoPlayed = false;
+	// Fall-related parameters
+	m_fFallTime = s_fFallTime;  // Duration of fall time (probably set elsewhere in the code)
+	m_bAnimTorsoPlayed = false; // Flag indicating if torso animation has been played
 
-	m_pPhysicsShell = NULL;
+	// Physics and collision
+	m_pPhysicsShell = NULL;     // Pointer to the physics shell, initially set to NULL
 
-    m_fFeelGrenadeRadius = 10.0f;
-    m_fFeelGrenadeTime = 1.0f;
+	// Grenade-related parameters
+	m_fFeelGrenadeRadius = 10.0f; // Radius within which the character can feel a grenade
+	m_fFeelGrenadeTime = 1.0f;    // Time for which the character can feel the grenade
 
-	m_holder = NULL;
-	m_holderID = u16(-1);
+	// Holder parameters
+	m_holder = NULL;             // Pointer to the holder object, initially set to NULL
+	m_holderID = u16(-1);        // ID of the holder, initially set to an invalid value (unsigned 16-bit integer)
 
 
 #ifdef DEBUG
-    Device.seqRender.Add	(this,REG_PRIORITY_LOW);
+	// In DEBUG mode, add this object to the rendering sequence with low priority
+	Device.seqRender.Add(this, REG_PRIORITY_LOW);
 #endif
 
-	//ðàçðåøèòü èñïîëüçîâàíèå ïîÿñà â inventory
+	// Enable belt item usage in the inventory
 	inventory().SetBeltUseful(true);
+	// Initialize pointers related to objects the actor is looking at
+	m_pPersonWeLookingAt = NULL;   // Pointer to a person the actor is currently looking at, initially set to NULL
+	m_pVehicleWeLookingAt = NULL;  // Pointer to a vehicle the actor is currently looking at, initially set to NULL
+	m_pObjectWeLookingAt = NULL;   // Pointer to a generic object the actor is currently looking at, initially set to NULL
 
-	m_pPersonWeLookingAt = NULL;
-	m_pVehicleWeLookingAt = NULL;
-	m_pObjectWeLookingAt = NULL;
-	m_bPickupMode = false;
-
-	pStatGraph = NULL;
-
-	m_pActorEffector = NULL;
-
+	// Initialize mode flags
+	m_bPickupMode = false;         // Flag indicating if pickup mode is active (false = not active)
+	pStatGraph = NULL;             // Pointer to the statistics graph, initially set to NULL
+	m_pActorEffector = NULL;       // Pointer to the actor effector, initially set to NULL
+	// Disable zoom aiming mode by default
 	SetZoomAimingMode(false);
 
-	m_sDefaultObjAction = NULL;
+	m_sDefaultObjAction = NULL;    // Pointer to the default object action, initially set to NULL
+	m_fSprintFactor = 4.f;         // Sprint factor, affects the sprint speed of the actor
 
-	m_fSprintFactor = 4.f;
-
-	//hFriendlyIndicator.create(FVF::F_LIT,RCache.Vertex.Buffer(),RCache.QuadIB);
-
-	m_pUsableObject = NULL;
-
-
-	m_anims = xr_new<SActorMotions>();
-	//Alundaio: Needed for car
+	// Create an indicator for friendly entities (commented out in the code)
+	// hFriendlyIndicator.create(FVF::F_LIT, RCache.Vertex.Buffer(), RCache.QuadIB);
+	m_pUsableObject = NULL;        // Pointer to a usable object, initially set to NULL
+	// Initialize the animation set for the actor
+	m_anims = xr_new<SActorMotions>(); // Create a new instance of SActorMotions for actor animations
 #ifdef ENABLE_CAR
+	// If car support is enabled, initialize vehicle animations
 	m_vehicle_anims = xr_new<SActorVehicleAnims>();
 #endif
 	//-Alundaio
-	m_entity_condition = NULL;
-	m_iLastHitterID = u16(-1);
-	m_iLastHittingWeaponID = u16(-1);
-	m_statistic_manager = NULL;
+	m_entity_condition = NULL;              // Pointer to the entity condition, initially set to NULL
+	m_iLastHitterID = u16(-1);              // ID of the last entity that hit the actor, set to -1 (indicating no hits)
+	m_iLastHittingWeaponID = u16(-1);      // ID of the last weapon used to hit the actor, set to -1 (indicating no hits)
+	m_statistic_manager = NULL;            // Pointer to the statistic manager, initially set to NULL
 	//-----------------------------------------------------------------------------------
+	// Initialize memory for the actor if not running on a dedicated server
 	m_memory = g_dedicated_server ? 0 : xr_new<CActorMemory>(this);
-	m_bOutBorder = false;
-	m_hit_probability = 1.f;
-	m_feel_touch_characters = 0;
+	m_bOutBorder = false;                  // Flag indicating if the actor is out of border, initially set to false
+	m_hit_probability = 1.f;               // Probability of hitting an enemy, initially set to 1 (certain hit)
+	m_feel_touch_characters = 0;           // Counter for feeling touch with characters, initially set to 0
 	//-----------------------------------------------------------------------------------
-	m_dwILastUpdateTime = 0;
+	m_dwILastUpdateTime = 0;               // Timestamp of the last update, initially set to 0
 
+	// Initialize location manager with the current actor
 	m_location_manager = xr_new<CLocationManager>(this);
-	m_block_sprint_counter = 0;
+	m_block_sprint_counter = 0;            // Counter for blocking sprint, initially set to 0
 
-	m_disabled_hitmarks = false;
-	m_inventory_disabled = false;
+	m_disabled_hitmarks = false;           // Flag indicating if hitmarks are disabled, initially set to false
+	m_inventory_disabled = false;          // Flag indicating if the inventory is disabled, initially set to false
 
 	// Alex ADD: for smooth crouch fix
-	CurrentHeight = -1.f;
+	CurrentHeight = -1.f;                  // Current height for crouch adjustments, initially set to -1
 
-	m_night_vision = NULL;
-	m_bNightVisionAllow = true;
-	m_bNightVisionOn = false;
+	m_night_vision = NULL;                 // Pointer to night vision system, initially set to NULL
+	m_bNightVisionAllow = true;            // Flag indicating if night vision is allowed, initially set to true
+	m_bNightVisionOn = false;              // Flag indicating if night vision is currently on, initially set to false
 
 	//Discord
-	discord_gameinfo.ingame = true;
+	discord_gameinfo.ingame = true;        // ChatGPT thinks this is for discord intergration LOL its not, Checks if ingame
 
-	//Safemode (lower weapon)
-	m_bSafemode = false;
+	// Safemode (lower weapon)
+	m_bSafemode = false;                   // Flag indicating if safemode is active (lower weapon mode), initially set to false
 
-	m_bDelayDrawPickupItems = false;
+	m_bDelayDrawPickupItems = false;       // Flag to delay drawing pickup items, initially set to false
 
-	m_FPCam = NULL;
+	m_FPCam = NULL;                        // Pointer to the first-person camera, initially set to NULL
 }
 
 
