@@ -732,38 +732,50 @@ void CActor::Hit(SHit* pHDS)
 		}
 	}
 
-	//TODO: Finish adding comments using chatgpt.
-	//GhastlyDo
-	
-	//slow actor, only when he gets hit
-	m_hit_slowmo = conditions().HitSlowmo(pHDS);
+	m_hit_slowmo = conditions().HitSlowmo(pHDS); // Determine if the hit should trigger slow-motion effects for the actor
 
 	//---------------------------------------------------------------
+	// Check if the current view entity is the actor and if we're not on a dedicated server
+	// Also ensure the hit type is fire wound
 	if ((Level().CurrentViewEntity() == this) &&
 		!g_dedicated_server &&
 		(HDS.hit_type == ALife::eHitTypeFireWound))
 	{
+		// Find the last hitter and the last hitting weapon by their IDs
 		CObject* pLastHitter = Level().Objects.net_Find(m_iLastHitterID);
 		CObject* pLastHittingWeapon = Level().Objects.net_Find(m_iLastHittingWeaponID);
+		// Process the hit sector with the last hitter and weapon
 		HitSector(pLastHitter, pLastHittingWeapon);
 	}
 
+	// Check if the actor is sprinting and is controlled by the player
+	// Also check if sprinting should be disabled due to the hit conditions
 	if ((mstate_real & mcSprint) && Level().CurrentControlEntity() == this && conditions().DisableSprint(pHDS))
 	{
+		// Special case: if the hit was self-inflicted and there is no specific bone ID, consider it a special burn hit
 		bool const is_special_burn_hit_2_self = (pHDS->who == this) && (pHDS->boneID == BI_NONE);
 		if (!is_special_burn_hit_2_self)
 		{
+			// Disable sprinting if it's not a special burn hit
 			mstate_wishful &= ~mcSprint;
 		}
 	}
+	// Ensure we are not on a dedicated server and hit marks are not disabled
 	if (!g_dedicated_server && !m_disabled_hitmarks)
 	{
+		// Determine if the hit type is fire wound or a specific kind of wound
 		bool b_fireWound = (pHDS->hit_type == ALife::eHitTypeFireWound || pHDS->hit_type == ALife::eHitTypeWound_2);
+		// Check if the hit type is a strike and mark it as initiated
 		b_initiated = b_initiated && (pHDS->hit_type == ALife::eHitTypeStrike);
 
+		// Apply a hit mark if it is a fire wound or if the hit was initiated
 		if (b_fireWound || b_initiated)
 			HitMark(HDS.damage(), HDS.dir, HDS.who, HDS.bone(), HDS.p_in_bone_space, HDS.impulse, HDS.hit_type);
 	}
+
+	//TODO: Finish adding comments using chatgpt.
+	//This is a lot of work :)
+	//GhastlyDo
 
 	if (IsGameTypeSingle())
 	{

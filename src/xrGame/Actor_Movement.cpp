@@ -20,10 +20,10 @@
 #ifdef DEBUG
 #include "phdebug.h"
 #endif
-static const float s_fLandingTime1 = 0.1f; // через сколько снять флаг Landing1 (т.е. включить следующую анимацию)
-static const float s_fLandingTime2 = 0.3f; // через сколько снять флаг Landing2 (т.е. включить следующую анимацию)
-static const float s_fJumpTime = 0.3f;
-static const float s_fJumpGroundTime = 0.1f; // для снятия флажка Jump если на земле
+static const float s_fLandingTime1 = 0.1f; // Duration for landing phase 1 (i.e., the time to complete the initial landing phase)
+static const float s_fLandingTime2 = 0.3f; // Duration for landing phase 2 (i.e., the time to complete the final landing phase)
+static const float s_fJumpTime = 0.3f;     // Duration for the jump action
+static const float s_fJumpGroundTime = 0.1f; // Time to complete the jump action when landing on the ground
 const float s_fFallTime = 0.2f;
 
 IC static void generate_orthonormal_basis1(const Fvector& dir, Fvector& updir, Fvector& right)
