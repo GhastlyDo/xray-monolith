@@ -6,29 +6,39 @@
 //	Description : actor script export
 ////////////////////////////////////////////////////////////////////////////
 
-#include "pch_script.h"
-#include "actor.h"
-#include "level_changer.h"
-#include "ActorCondition.h"
+#include "pch_script.h"          // Precompiled header file for script support
+#include "actor.h"               // Header for the CActor class
+#include "level_changer.h"       // Header for the CLevelChanger class
+#include "ActorCondition.h"      // Header for the CActorCondition class
 
-using namespace luabind;
+#include <luabind/luabind.hpp>
 
-#pragma optimize("s",on)
-void CActor::script_register(lua_State *L)
+//using namespace luabind;         // Use the luabind namespace for Lua binding functionality, luabind is ambigus
+
+#pragma optimize("s",on)          // Optimize for speed
+
+// Function to register script bindings for CActor and CLevelChanger classes with Lua
+void CActor::script_register(lua_State* L)
 {
-	CActorCondition::script_register(L);
-	
-	module(L)
-	[
-		class_<CActor,CGameObject>("CActor")
-			.def(constructor<>())
-			.def("conditions", &CActor::conditions)
-			.def("inventory_disabled", &CActor::inventory_disabled)
-			.def("set_inventory_disabled", &CActor::set_inventory_disabled)
-#ifndef	BENCHMARK_BUILD
-		,
-		class_<CLevelChanger,CGameObject>("CLevelChanger")
-			.def(constructor<>())
-#endif	//	BENCHMARK_BUILD
-	];
+    // Register CActorCondition class with Lua
+    CActorCondition::script_register(L);
+
+    using namespace luabind;
+    // Define Lua bindings for the CActor and CLevelChanger classes
+    module(L)
+        [
+            // Register the CActor class with Lua
+            class_<CActor, CGameObject>("CActor")
+                .def(constructor<>())                 // Default constructor
+                .def("conditions", &CActor::conditions) // Bind the conditions() method
+                .def("inventory_disabled", &CActor::inventory_disabled) // Bind the inventory_disabled() method
+                .def("set_inventory_disabled", &CActor::set_inventory_disabled) // Bind the set_inventory_disabled() method
+
+#ifndef BENCHMARK_BUILD
+                // If not in benchmark build, register the CLevelChanger class with Lua
+                ,
+                class_<CLevelChanger, CGameObject>("CLevelChanger")
+                .def(constructor<>()) // Default constructor
+#endif  // BENCHMARK_BUILD
+        ];
 }
