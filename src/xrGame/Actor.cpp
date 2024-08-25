@@ -291,78 +291,109 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 
 CActor::~CActor()
 {
-	xr_delete(m_location_manager);
-	xr_delete(m_memory);
-	xr_delete(game_news_registry);
+	xr_delete(m_location_manager); // Delete the location manager to free associated resources
+	xr_delete(m_memory); // Delete the actor memory to free associated resources
+	xr_delete(game_news_registry); // Delete the game news registry to free associated resources
 #ifdef DEBUG
+	// Remove the actor from the render sequence if debugging
     Device.seqRender.Remove(this);
 #endif
 	//xr_delete(Weapons);
-	for (int i = 0; i < eacMaxCam; ++i) xr_delete(cameras[i]);
+	for (int i = 0; i < eacMaxCam; ++i) xr_delete(cameras[i]);  // Clean up camera resources
 
+	//Destroy sound resources
 	m_HeavyBreathSnd.destroy();
 	m_BloodSnd.destroy();
 	m_DangerSnd.destroy();
 
-	xr_delete(m_pActorEffector);
+	xr_delete(m_pActorEffector); // Delete actor effector to free associated resources
 
-	xr_delete(m_pPhysics_support);
+	xr_delete(m_pPhysics_support); // Delete physics support to free associated resources
 
-	xr_delete(m_anims);
+	xr_delete(m_anims);  // Delete animation resources
 	//Alundaio: For car
 #ifdef ENABLE_CAR
+	// Delete vehicle animations if car support is enabled
 	xr_delete(m_vehicle_anims);
 #endif
 	//-Alundaio
 
-	xr_delete(m_night_vision);
+	xr_delete(m_night_vision); // Delete night vision resources
 
 	//Discord
-	discord_gameinfo.ingame = false;
+	discord_gameinfo.ingame = false; // ChatGPT thinks its for Discord-Intergration, its not its to looks like it checks if the Actor is ingame.
 }
 
 void CActor::reinit()
 {
+	// Reinitialize the character's physics support and create a new character for it
 	character_physics_support()->movement()->CreateCharacter();
+	// Set this actor as the reference object for the physics support system
 	character_physics_support()->movement()->SetPhysicsRefObject(this);
-	CEntityAlive::reinit();
-	CInventoryOwner::reinit();
-
+	// Call base class reinitialization methods to ensure proper setup
+	CEntityAlive::reinit();  // Reinitialize the base class CEntityAlive
+	CInventoryOwner::reinit();  // Reinitialize inventory-related settings in the base class CInventoryOwner
+	// Initialize the physics support system, possibly setting up additional parameters
 	character_physics_support()->in_Init();
+	// Reinitialize the material properties of the actor
 	material().reinit();
-
+	// Reset the pointer to the usable object, indicating no object is currently being used
 	m_pUsableObject = NULL;
+	// If not running on a dedicated server, reinitialize memory-related components
 	if (!g_dedicated_server)
 		memory().reinit();
-
+	// Reset the external input handler, likely to clear any previous settings or bindings
 	set_input_external_handler(0);
+	// Reset the time lock acceleration to 0, which may be related to actor movement or actions
 	m_time_lock_accel = 0;
 }
 
 void CActor::reload(LPCSTR section)
 {
+	// Reload configuration and state data for the base class CEntityAlive
 	CEntityAlive::reload(section);
+	// Reload inventory-related settings from the specified section
 	CInventoryOwner::reload(section);
+	// Reload material properties based on the provided section
 	material().reload(section);
+	// Reload step management settings, which might be related to actor movement
 	CStepManager::reload(section);
+	// Reload memory-related components if not running on a dedicated server
 	if (!g_dedicated_server)
 		memory().reload(section);
+	// Reload location management settings from the specified section
 	m_location_manager->reload(section);
 }
 
 void set_box(LPCSTR section, CPHMovementControl& mc, u32 box_num)
 {
-	Fbox bb;
-	Fvector vBOX_center, vBOX_size;
-	// m_PhysicMovementControl: BOX
-	string64 buff, buff1;
+	// Define variables to hold box data
+	Fbox bb;                // Bounding box
+	Fvector vBOX_center;    // Center of the bounding box
+	Fvector vBOX_size;      // Size (dimensions) of the bounding box
+
+	// Buffers to hold formatted string data
+	string64 buff;          // Buffer for the formatted string
+	string64 buff1;         // Buffer for intermediate string data
+
+	// Construct the setting key for the bounding box center
 	strconcat(sizeof(buff), buff, "ph_box", itoa(box_num, buff1, 10), "_center");
+	// Retrieve the center vector of the bounding box from settings
 	vBOX_center = pSettings->r_fvector3(section, buff);
+
+	// Construct the setting key for the bounding box size
 	strconcat(sizeof(buff), buff, "ph_box", itoa(box_num, buff1, 10), "_size");
+	// Retrieve the size vector of the bounding box from settings
 	vBOX_size = pSettings->r_fvector3(section, buff);
+
+	// Adjust the size of the bounding box along the y-axis by a collision shift factor
 	vBOX_size.y += cammera_into_collision_shift / 2.f;
+
+	// Set the bounding box with center and size
 	bb.set(vBOX_center, vBOX_center);
 	bb.grow(vBOX_size);
+
+	// Apply the bounding box to the specified box number in the movement control
 	mc.SetBox(box_num, bb);
 }
 
@@ -459,9 +490,9 @@ void CActor::Load(LPCSTR section)
 	character_physics_support()->movement()->SetAirControlParam(AirControlParam);
 
 	m_fPickupInfoRadius = pSettings->r_float(section, "pickup_info_radius");
-    m_fFeelGrenadeRadius = pSettings->r_float(section, "feel_grenade_radius");
-    m_fFeelGrenadeTime = pSettings->r_float(section, "feel_grenade_time");
-    m_fFeelGrenadeTime *= 1000.0f;
+	m_fFeelGrenadeRadius = pSettings->r_float(section, "feel_grenade_radius");
+	m_fFeelGrenadeTime = pSettings->r_float(section, "feel_grenade_time");
+	m_fFeelGrenadeTime *= 1000.0f;
 
 	character_physics_support()->in_Load(section);
 
@@ -484,19 +515,19 @@ void CActor::Load(LPCSTR section)
 			char buf[256];
 
 			::Sound->create(sndDie[0], strconcat(sizeof(buf), buf, *cName(), "\\die0"), st_Effect,
-			                SOUND_TYPE_MONSTER_DYING);
+				SOUND_TYPE_MONSTER_DYING);
 			::Sound->create(sndDie[1], strconcat(sizeof(buf), buf, *cName(), "\\die1"), st_Effect,
-			                SOUND_TYPE_MONSTER_DYING);
+				SOUND_TYPE_MONSTER_DYING);
 			::Sound->create(sndDie[2], strconcat(sizeof(buf), buf, *cName(), "\\die2"), st_Effect,
-			                SOUND_TYPE_MONSTER_DYING);
+				SOUND_TYPE_MONSTER_DYING);
 			::Sound->create(sndDie[3], strconcat(sizeof(buf), buf, *cName(), "\\die3"), st_Effect,
-			                SOUND_TYPE_MONSTER_DYING);
+				SOUND_TYPE_MONSTER_DYING);
 
 			m_HeavyBreathSnd.create(pSettings->r_string(section, "heavy_breath_snd"), st_Effect,
-			                        SOUND_TYPE_MONSTER_INJURING);
+				SOUND_TYPE_MONSTER_INJURING);
 			m_BloodSnd.create(pSettings->r_string(section, "heavy_blood_snd"), st_Effect, SOUND_TYPE_MONSTER_INJURING);
 			m_DangerSnd.create(pSettings->r_string(section, "heavy_danger_snd"), st_Effect,
-			                   SOUND_TYPE_MONSTER_INJURING);
+				SOUND_TYPE_MONSTER_INJURING);
 		}
 	}
 
@@ -547,104 +578,163 @@ void CActor::Load(LPCSTR section)
 
 void CActor::PHHit(SHit& H)
 {
+	// Pass the hit event to the physics support system.
+	// The 'false' argument indicates that this hit is not related to a collision in the context of a physics simulation.
 	m_pPhysics_support->in_Hit(H, false);
 }
 
+// Predicate to check if a sound is currently playing
 struct playing_pred
 {
+	// Overloaded operator() to determine if a sound is playing
 	IC bool operator()(ref_sound& s)
 	{
+		// Check if the sound has a non-null feedback, which indicates it's currently playing
 		return (NULL != s._feedback());
 	}
 };
 
 void CActor::Hit(SHit* pHDS)
 {
-	bool b_initiated = pHDS->aim_bullet; // physics strike by poltergeist
+	// Store the state of 'aim_bullet' before modifying it
+	bool b_initiated = pHDS->aim_bullet; // 'aim_bullet' indicates if the bullet is being aimed by the poltergeist (or similar entity)
 
+	// Set 'aim_bullet' to false to disable aiming functionality
 	pHDS->aim_bullet = false;
 
+	// Reference to the hit data structure
 	SHit& HDS = *pHDS;
+
+	// Validate the hit type to ensure it's within known ranges
 	if (HDS.hit_type < ALife::eHitTypeBurn || HDS.hit_type >= ALife::eHitTypeMax)
 	{
+		// Create an error message indicating an unknown or unregistered hit type
 		string256 err;
 		xr_sprintf(err, "Unknown/unregistered hit type [%d]", HDS.hit_type);
+		// Assert false and provide an error message if the hit type is invalid
 		R_ASSERT2(0, err);
-	}
+}
 #ifdef DEBUG
-    if(ph_dbg_draw_mask.test(phDbgCharacterControl)) {
-        DBG_OpenCashedDraw();
-        Fvector to;to.add(Position(),Fvector().mul(HDS.dir,HDS.phys_impulse()));
-        DBG_DrawLine(Position(),to,D3DCOLOR_XRGB(124,124,0));
-        DBG_ClosedCashedDraw(500);
-    }
+	// Check if the debug mask for character control drawing is enabled
+	if (ph_dbg_draw_mask.test(phDbgCharacterControl)) {
+		// Begin caching debug drawing operations
+		DBG_OpenCashedDraw();
+
+		// Calculate the end point of the debug line
+		// 'Position()' returns the current position of the actor
+		// 'HDS.dir' is the direction of the hit
+		// 'HDS.phys_impulse()' is the magnitude of the physical impulse applied
+		Fvector to;
+		to.add(Position(), Fvector().mul(HDS.dir, HDS.phys_impulse()));
+
+		// Draw a line from the actor's position to the calculated end point
+		// The line is colored yellow (D3DCOLOR_XRGB(124,124,0))
+		DBG_DrawLine(Position(), to, D3DCOLOR_XRGB(124, 124, 0));
+
+		// End caching debug drawing operations and specify the cache duration (500 ms)
+		DBG_ClosedCashedDraw(500);
+	}
 #endif // DEBUG
 
-	bool bPlaySound = true;
-	if (!g_Alive()) bPlaySound = false;
+	bool bPlaySound = true; // Initialize the boolean flag to indicate that the sound should be played
 
+	// Check if the game or system state indicates that the entity is not alive
+	if (!g_Alive()) {
+		// If the entity is not alive, set the flag to false to prevent playing the sound
+		bPlaySound = false;
+	}
+
+	// Check if the game is not a single-player game and not running on a dedicated server
 	if (!IsGameTypeSingle() && !g_dedicated_server)
 	{
+		// Retrieve the player state object for the current player by their game ID
 		game_PlayerState* ps = Game().GetPlayerByGameID(ID());
+
+		// Check if the player state object exists and if the player is invincible
 		if (ps && ps->testFlag(GAME_PLAYER_FLAG_INVINCIBLE))
 		{
+			// Disable sound playback if the player is invincible
 			bPlaySound = false;
-			if (Device.dwFrame != last_hit_frame &&
-				HDS.bone() != BI_NONE)
-			{
-				// âû÷èñëèòü ïîçèöèþ è íàïðàâëåííîñòü ïàðòèêëà
-				Fmatrix pos;
 
+			// Ensure particles are played only if the frame has changed since the last hit
+			// and the bone ID is valid
+			if (Device.dwFrame != last_hit_frame && HDS.bone() != BI_NONE)
+			{
+				// Prepare the transformation matrix for the particle effects
+				Fmatrix pos;
 				CParticlesPlayer::MakeXFORM(this, HDS.bone(), HDS.dir, HDS.p_in_bone_space, pos);
 
-				// óñòàíîâèòü particles
+				// Create and set up the particle effects based on the camera view
 				CParticlesObject* ps = NULL;
-
 				if (eacFirstEye == cam_active && this == Level().CurrentEntity())
+					// First-person view: create and play the invincibility fire shield particles
 					ps = CParticlesObject::Create(invincibility_fire_shield_1st, TRUE);
 				else
+					// Third-person view: create and play the invincibility fire shield particles
 					ps = CParticlesObject::Create(invincibility_fire_shield_3rd, TRUE);
 
+				// Update the particle effects position and add them to the list to be played
 				ps->UpdateParent(pos, Fvector().set(0.f, 0.f, 0.f));
 				GamePersistent().ps_needtoplay.push_back(ps);
-			};
-		};
+			}
+		}
 
-
+		// Update the last hit frame to the current frame
 		last_hit_frame = Device.dwFrame;
 	};
 
+
+	// Check if we are not on a dedicated server, there are hit sounds available for the hit type,
+	// and conditions for playing a hit sound are met
 	if (!g_dedicated_server &&
 		!sndHit[HDS.hit_type].empty() &&
 		conditions().PlayHitSound(pHDS))
 	{
+		// Choose a random sound from the list of hit sounds for the given hit type
 		ref_sound& S = sndHit[HDS.hit_type][Random.randI(sndHit[HDS.hit_type].size())];
+
+		// Check if any hit sound for the given hit type is currently playing
 		bool b_snd_hit_playing = sndHit[HDS.hit_type].end() != std::find_if(
 			sndHit[HDS.hit_type].begin(), sndHit[HDS.hit_type].end(), playing_pred());
 
+		// Special handling for explosion hit type
 		if (ALife::eHitTypeExplosion == HDS.hit_type)
 		{
 			if (this == Level().CurrentControlEntity())
 			{
+				// If the current entity is the controlled entity, increase the sound volume
 				S.set_volume(10.0f);
+
+				// Check if the shock effector is not already created
 				if (!m_sndShockEffector)
 				{
+					// Create and start a new sound shock effector
 					m_sndShockEffector = xr_new<SndShockEffector>();
 					m_sndShockEffector->Start(this, float(S.get_length_sec() * 1000.0f), HDS.damage());
 				}
 			}
 			else
+			{
+				// If the current entity is not the controlled one, do not play the sound
 				bPlaySound = false;
+			}
 		}
+
+		// If sound playback is allowed and no sound of this type is currently playing
 		if (bPlaySound && !b_snd_hit_playing)
 		{
+			// Calculate the point where the sound should be played (slightly above the actor's position)
 			Fvector point = Position();
 			point.y += CameraHeight();
+
+			// Play the selected sound at the calculated position
 			S.play_at_pos(this, point);
 		}
 	}
 
-
+	//TODO: Finish adding comments using chatgpt.
+	//GhastlyDo
+	
 	//slow actor, only when he gets hit
 	m_hit_slowmo = conditions().HitSlowmo(pHDS);
 
