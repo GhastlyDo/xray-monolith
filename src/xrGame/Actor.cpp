@@ -89,31 +89,49 @@ using namespace luabind;
 #include "xrEngine\x_ray.h"
 #include "ui/UIHudStatesWnd.h"
 
-const u32 patch_frames = 50;
-const float respawn_delay = 1.f;
-const float respawn_auto = 7.f;
+const u32 patch_frames = 50;// Number of frames for handling or displaying a patch effect (e.g., visual feedback for actors)
+const float respawn_delay = 1.f;// Delay before an actor respawns after being removed or destroyed (in seconds)
+const float respawn_auto = 7.f;// Time after which an actor automatically respawns without player intervention (in seconds)
 
-static float IReceived = 0;
-static float ICoincidenced = 0;
-extern float cammera_into_collision_shift;
+static float IReceived = 0;// Accumulated value for tracking received collision or interaction events related to the actor
+static float ICoincidenced = 0;// Accumulated value for tracking coincidental events or collisions related to the actor
+extern float cammera_into_collision_shift;// External variable affecting the camera's position or movement during collisions with the actor
 
+// Static member array of the ACTOR_DEFS class, holding the quick-use slots for an actor
+// Each slot is initially set to NULL, indicating that no items are assigned to these slots at the start.
 string32 ACTOR_DEFS::g_quick_use_slots[4] = {NULL, NULL, NULL, NULL};
-//skeleton
+//skeleton //what?
 
+static Fbox bbStandBox;// Static bounding box for the actor's standing position
+static Fbox bbCrouchBox;// Static bounding box for the actor's crouching position
+static Fvector vFootCenter;// Static vector representing the center point of the actor's foot position
+static Fvector vFootExt;// Static vector representing the extension or offset from the foot center
 
-static Fbox bbStandBox;
-static Fbox bbCrouchBox;
-static Fvector vFootCenter;
-static Fvector vFootExt;
+// Actor.cpp
+//#include "Actor_Flags.h"
 
-Flags32 psActorFlags = {AF_GODMODE_RT | AF_AUTOPICKUP | AF_RUN_BACKWARD | AF_IMPORTANT_SAVE | AF_USE_TRACERS};
-int psActorSleepTime = 1;
+// Flags32 is a bitfield type used for managing multiple flags in a single integer.
+// This initializes psActorFlags with several attributes related to the actor's behavior and abilities.
+Flags32 psActorFlags = {
+	AF_GODMODE_RT | // Enable god mode, making the actor invulnerable to damage.
+	AF_AUTOPICKUP | // Automatically pick up items without manual intervention.
+	AF_RUN_BACKWARD | // Allow the actor to run backward.
+	AF_IMPORTANT_SAVE | // Mark the actor's state as important for saving, possibly prioritizing it.
+	AF_USE_TRACERS	// Enable tracers for visual feedback on projectiles or shots.
+};
+
+// Integer value to represent a sleep or delay period related to actor behavior or state updates.
+// This value is used to control how often certain actions or state changes occur.
+int psActorSleepTime = 1; // Sleep time is set to 1 unit (seconds or milliseconds), influencing actor's update frequency or delays.
 
 
 CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 {
-	game_news_registry = xr_new<CGameNewsRegistryWrapper>();
+	game_news_registry = xr_new<CGameNewsRegistryWrapper>(); // Create a new instance of CGameNewsRegistryWrapper and assign it to game_news_registry
 	// Cameras
+
+	// Initialize cameras for different viewpoints
+	// - eacFirstEye: This camera represents the player's primary viewpoint from the first person perspective
 	cameras[eacFirstEye] = xr_new<CCameraFirstEye>(this);
 	cameras[eacFirstEye]->Load("actor_firsteye_cam");
 
@@ -127,6 +145,7 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 
 	//if (psActorFlags.test(AF_PSP))
 	//{
+	// If PSP flag is set, use PSP-specific camera
 	cameras[eacLookAt] = xr_new<CCameraLook2>(this);
 	cameras[eacLookAt]->Load("actor_look_cam_psp");
 	//}
@@ -136,8 +155,10 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 	//    cameras[eacLookAt]->Load("actor_look_cam");
 	//}
 	//-Alundaio
+	// - eacFreeLook: This camera allows free movement and viewing from the actor's perspective
 	cameras[eacFreeLook] = xr_new<CCameraLook>(this);
 	cameras[eacFreeLook]->Load("actor_free_cam");
+	// - eacFixedLookAt: This camera provides a fixed viewpoint that looks at the actor
 	cameras[eacFixedLookAt] = xr_new<CCameraFixedLook>(this);
 	cameras[eacFixedLookAt]->Load("actor_look_cam");
 

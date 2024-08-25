@@ -62,6 +62,8 @@
 void test_draw();  // Function for drawing test elements on the screen (likely for debugging or UI testing).
 void test_key(int dik);  // Function to handle key input for testing purposes, 'dik' is likely the key code.
 
+//BOOL	g_old_style_ui_hud			= FALSE;
+
 #include "../Include/xrRender/Kinematics.h" 
 // Include directive for the Kinematics header, which is part of the rendering engine.
 // This might include classes and functions related to skeletal animations or other kinematic processes.
