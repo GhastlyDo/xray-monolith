@@ -162,14 +162,20 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 	cameras[eacFixedLookAt] = xr_new<CCameraFixedLook>(this);
 	cameras[eacFixedLookAt]->Load("actor_look_cam");
 
+	// Set the initial active camera to the first-person view
 	cam_active = eacFirstEye;
+	// Initialize the previous camera position to zero
 	fPrevCamPos = 0.0f;
+	// Set the previous camera direction to a default forward vector (looking along the positive Z-axis)
 	vPrevCamDir.set(0.f, 0.f, 1.f);
+	// Initialize the current angular velocity of the camera to zero
 	fCurAVelocity = 0.0f;
+	// Initialize the yaw (rotation around the vertical axis) magnitude for the first-person camera to zero
 	fFPCamYawMagnitude = 0.0f; //--#SM+#--
+	// Initialize the pitch (rotation around the horizontal axis) magnitude for the first-person camera to zero
 	fFPCamPitchMagnitude = 0.0f; //--#SM+#--
-	// ýôôåêòîðû
-	pCamBobbing = 0;
+	// Camera bobbing (movement effect) is not active or not set
+	pCamBobbing = 0; // "Camera bobbing" refers to the visual effect of the camera moving up and down or swaying slightly, often used to simulate walking or running.
 
 	cam_freelook = eflDisabled;
 	freelook_cam_control = 0.f;
