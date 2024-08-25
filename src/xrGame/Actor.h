@@ -18,8 +18,10 @@
 #include "step_manager.h"
 #include "script_export_space.h"
 
-using namespace ACTOR_DEFS;
+using namespace ACTOR_DEFS; // Importing the necessary namespaces and declarations.
 
+// Forward declarations of various classes, structs, and types used in the code.
+// These are necessary to inform the compiler about these types without including their full definitions.
 class CInfoPortion;
 struct GAME_NEWS_DATA;
 class CActorCondition;
@@ -28,7 +30,8 @@ class CGameTaskRegistryWrapper;
 class CGameNewsRegistryWrapper;
 class CCharacterPhysicsSupport;
 class CActorCameraManager;
-// refs
+
+// Forward declarations of classes from the ENGINE_API namespace, indicating they are part of the engine's API.
 class ENGINE_API CCameraBase;
 class ENGINE_API CBoneInstance;
 class ENGINE_API CBlend;
@@ -37,6 +40,7 @@ class CEffectorBobbing;
 class CHolderCustom;
 class CUsableScriptObject;
 
+// Forward declarations of structs and classes related to various effectors and inventory management.
 struct SShootingEffector;
 struct SSleepEffector;
 class CSleepEffectorPP;
@@ -55,6 +59,7 @@ struct CameraRecoil;
 class CCameraShotEffector;
 class CActorInputHandler;
 
+// Forward declarations for classes managing actor memory, statistics, location, and vision effects.
 class CActorMemory;
 class CActorStatisticMgr;
 
@@ -63,67 +68,115 @@ class CLocationManager;
 class CNightVisionEffector;
 class CFPCamEffector;
 
+// The CActor class inherits from several base classes and interfaces.
 class CActor :
-	public CEntityAlive,
-	public IInputReceiver,
-	public Feel::Touch,
-	public CInventoryOwner,
-	public CPhraseDialogManager,
-	public CStepManager,
-	public Feel::Sound
+	public CEntityAlive, // Base class representing a living entity.
+	public IInputReceiver, // Interface for handling input events.
+	public Feel::Touch, // Interface for touch interactions.
+	public CInventoryOwner, // Interface for inventory management.
+	public CPhraseDialogManager, // Interface for managing dialogue.
+	public CStepManager,  // Interface for step management.
+	public Feel::Sound // Interface for sound interactions.
 #ifdef DEBUG
-    ,public pureRender
+    ,public pureRender // Debug mode extension for rendering.
 #endif
 {
+    // Granting friend access to CActorCondition, allowing it to access private members of CActor.
 	friend class CActorCondition;
 private:
-	typedef CEntityAlive inherited;
+	typedef CEntityAlive inherited; // Typedef for easier reference to the base class.
 public:
-	CActor();
-	virtual ~CActor();
+	CActor();  // Constructor for the CActor class.
+	virtual ~CActor(); // Destructor for the CActor class.
 
 // demonized: First Person Death
 public:
+	// Pointer to the First Person Camera Effector.
 	CFPCamEffector* m_FPCam;
 
 public:
-	void initFPCam();
+	// Initializes the First Person Camera.
+	void initFPCam();  
+	 // Removes the First Person Camera.
 	void removeFPCam();
 
 public:
+	// Virtual method to determine if the actor is always considered the crow (presumably a special condition).
 	virtual BOOL AlwaysTheCrow() { return TRUE; }
 
+ 	// Casting functions to provide different types of access to the object.
 	virtual CAttachmentOwner* cast_attachment_owner() { return this; }
 	virtual CInventoryOwner* cast_inventory_owner() { return this; }
 	virtual CActor* cast_actor() { return this; }
 	virtual CGameObject* cast_game_object() { return this; }
 	virtual IInputReceiver* cast_input_receiver() { return this; }
+	// Methods to access the character's physics support.
 	virtual CCharacterPhysicsSupport* character_physics_support() { return m_pPhysics_support; }
 	virtual CCharacterPhysicsSupport* character_physics_support() const { return m_pPhysics_support; }
+	// Method to access the destroyable property (assumed to be part of a physics system).
 	virtual CPHDestroyable* ph_destroyable();
+	// Accessor for the custom holder.
 	CHolderCustom* Holder() { return m_holder; }
+
 public:
-
+	// Virtual function to load data from a specified section of a configuration or data file.
+	// Parameters:
+	// - section: A string representing the section of the file from which data should be loaded.
 	virtual void Load(LPCSTR section);
-
+	// Virtual function that is scheduled to update periodically.
+	// Parameters:
+	// - T: An unsigned 32-bit integer representing the time or interval for the update.
+	// Purpose: This function is typically used for regular updates or maintenance tasks.
 	virtual void shedule_Update(u32 T);
+	// Virtual function for updating the object's state or performing tasks that need to be done each frame.
+	// Purpose: This function is often called during the main game loop to handle frame-by-frame updates.
 	virtual void UpdateCL();
-
+	// Virtual function to handle network events or messages.
+	// Parameters:
+	// - P: A reference to a NET_Packet object that contains the network packet data.
+	// - type: An unsigned 16-bit integer representing the type of the network event or message.
+	// Purpose: This function processes network events and updates the object based on the received data.
 	virtual void OnEvent(NET_Packet& P, u16 type);
 
-	// Render
+	// Render functions
+	// Virtual function to render the object.
+	// Purpose: This function is called to draw or display the object on the screen.
 	virtual void renderable_Render();
+	// Virtual function to generate shadows for the object.
+	// Returns:
+	// - BOOL: A boolean indicating whether the shadow was successfully generated or not.
+	// Purpose: This function is used to create shadows for the object, which enhances visual realism.
 	virtual BOOL renderable_ShadowGenerate();
+	// Virtual function to handle new sound events.
+	// Parameters:
+	// - who: A pointer to a CObject representing the source of the sound.
+	// - type: An integer indicating the type of sound event.
+	// - user_data: A pointer to user-defined sound data.
+	// - Position: A vector representing the position of the sound in the world.
+	// - power: A float representing the power or intensity of the sound.
+	// Purpose: This function processes new sound events and updates the object's response to these sounds.
 	virtual void feel_sound_new(CObject* who, int type, CSound_UserDataPtr user_data, const Fvector& Position,
 	                            float power);
+	// Virtual function to cast the object to a Feel::Sound interface.
+	// Returns:
+	// - A pointer to a Feel::Sound interface if the cast is successful; otherwise, it returns nullptr.
+	// Purpose: This function allows for type-casting to a specific interface related to sound.
 	virtual Feel::Sound* dcast_FeelSound() { return this; }
+	// Member variable to store the noise level associated with the object.
+	// Type: float
+	// Purpose: This variable is used to keep track of the noise level or sound intensity related to the object.
 	float m_snd_noise;
 #ifdef DEBUG
+ 	// Virtual function to handle rendering specifically for debugging purposes.
+    // This function is only compiled and included in the build if the DEBUG preprocessor directive is defined.
+    // Purpose: To provide additional rendering features or visualizations useful for debugging, such as
+    // debugging overlays, additional information, or special visual effects.
     virtual void						OnRender			();
-
 #endif
 
-
+//TODO: Finish generating comments.
+//BUILD STATUS: All binaries compiled successfully
+//DATA: 25/08/2024
 public:
 	virtual bool OnReceiveInfo(shared_str info_id) const;
 	virtual void OnDisableInfo(shared_str info_id) const;
@@ -207,13 +260,24 @@ public:
 
 public:
 
-	//свойства артефактов
+	// Function to update the state of artefacts on the actor's belt and outfit.
 	virtual void UpdateArtefactsOnBeltAndOutfit();
+	// Function to calculate the effect of a hit on the artefacts worn on the actor's belt.
+	// Parameters:
+	// - hit_power: The power of the hit, typically a float representing the intensity of the impact.
+	// - hit_type: The type of the hit, represented by the ALife::EHitType enumeration, which categorizes the nature of the damage.
+	// Returns:
+	// - A float value indicating the resulting damage or effect on the artefacts after the hit is applied.
 	float HitArtefactsOnBelt(float hit_power, ALife::EHitType hit_type);
+	// Function to get the protection provided by the artefacts worn on the actor's belt against a specific type of hit.
+	// Parameters:
+	// - hit_type: The type of hit, represented by the ALife::EHitType enumeration, which determines the kind of protection needed.
+	// Returns:
+	// - A float value representing the level of protection offered by the artefacts against the specified hit type.
 	float GetProtection_ArtefactsOnBelt(ALife::EHitType hit_type);
 
 protected:
-	//звук тяжелого дыхания
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	ref_sound m_HeavyBreathSnd;
 	ref_sound m_BloodSnd;
 	ref_sound m_DangerSnd;
@@ -239,13 +303,13 @@ protected:
 	BOOL b_DropActivated;
 	float f_DropPower;
 
-	//random seed для Zoom mode
+	//random seed пїЅпїЅпїЅ Zoom mode
 	s32 m_ZoomRndSeed;
-	//random seed для Weapon Effector Shot
+	//random seed пїЅпїЅпїЅ Weapon Effector Shot
 	s32 m_ShotRndSeed;
 
 	bool m_bOutBorder;
-	//сохраняет счетчик объектов в feel_touch, для которых необходимо обновлять размер колижена с актером 
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ feel_touch, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 
 	u32 m_feel_touch_characters;
 private:
 	void SwitchOutBorder(bool new_border_state);
@@ -277,10 +341,10 @@ protected:
 	// Rotation
 	SRotation r_torso;
 	float r_torso_tgt_roll;
-	//положение торса без воздействия эффекта отдачи оружия
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	SRotation unaffected_r_torso;
 
-	//ориентация модели
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	float r_model_yaw_dest;
 	float r_model_yaw; // orientation of model
 	float r_model_yaw_delta; // effect on multiple "strafe"+"something"
@@ -299,7 +363,7 @@ public:
 	MotionID m_current_torso;
 	MotionID m_current_head;
 
-	// callback на анимации модели актера
+	// callback пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	void SetCallbacks();
 	void ResetCallbacks();
 	static void _BCL Spin0Callback(CBoneInstance*);
@@ -364,7 +428,7 @@ protected:
 	CEffectorBobbing* pCamBobbing;
 
 
-	//менеджер эффекторов, есть у каждого актрера
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	CActorCameraManager* m_pActorEffector;
 	static float f_Ladder_cam_limit;
 public: //--#SM+#--
@@ -417,7 +481,7 @@ public:
 	bool m_bDelayDrawPickupItems;
 
 	//////////////////////////////////////////////////////////////////////////
-	// Motions (передвижения актрера)
+	// Motions (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 	//////////////////////////////////////////////////////////////////////////
 public:
 	void g_cl_CheckControls(u32 mstate_wf, Fvector& vControlAccel, float& Jump, float dt);
@@ -498,30 +562,30 @@ public:
 
 protected:
 	CFireDispertionController m_fdisp_controller;
-	//если актер целится в прицел
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	void SetZoomAimingMode(bool val) { m_bZoomAimingMode = val; }
 	bool m_bZoomAimingMode;
 
-	//настройки аккуратности стрельбы
-	//базовая дисперсия (когда игрок стоит на месте)
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ)
 	float m_fDispBase;
 	float m_fDispAim;
-	//коэффициенты на сколько процентов увеличится базовая дисперсия
-	//учитывает скорость актера 
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ 
 	float m_fDispVelFactor;
-	//если актер бежит
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	float m_fDispAccelFactor;
-	//если актер сидит
+	//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	float m_fDispCrouchFactor;
 	//crouch+no acceleration
 	float m_fDispCrouchNoAccelFactor;
 	Fvector m_vMissileOffset;
 public:
-	// Получение, и запись смещения для гранат
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	Fvector GetMissileOffset() const;
 	void SetMissileOffset(const Fvector& vNewOffset);
 protected:
-	//косточки используемые при стрельбе
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	int m_r_hand;
 	int m_l_finger1;
 	int m_r_finger2;
@@ -572,15 +636,15 @@ protected:
 	////////////////////////////////////////////////////////////////////////////
 	virtual bool can_validate_position_on_spawn() { return false; }
 	///////////////////////////////////////////////////////
-	// апдайт с данными физики
+	// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	xr_deque<net_update_A> NET_A;
 
 	//---------------------------------------------
 	//	bool					m_bHasUpdate;	
 	/// spline coeff /////////////////////
-	float SCoeff[3][4]; //коэффициэнты для сплайна Бизье
-	float HCoeff[3][4]; //коэффициэнты для сплайна Эрмита
-	Fvector IPosS, IPosH, IPosL; //положение актера после интерполяции Бизье, Эрмита, линейной
+	float SCoeff[3][4]; //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	float HCoeff[3][4]; //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+	Fvector IPosS, IPosH, IPosL; //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 #ifdef DEBUG
     DEF_DEQUE		(VIS_POSITION, Fvector);
